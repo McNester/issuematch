@@ -239,3 +239,58 @@ curl http://localhost:8080/api/users/me/interactions -H "Authorization: Bearer $
   }
 ]
 ```
+
+## Recommendations
+
+### GET /api/recommendations
+
+Needs a token. Returns issues picked for the current user by item-based collaborative filtering. A user with no history gets the most popular open issues.
+
+| Parameter | Meaning |
+| --- | --- |
+| `limit` | Default 10, at most 50 |
+| `strategy` | `precomputed` (default) reads stored similarities. `live` computes them during the request |
+| `cache` | `on` (default) or `off` |
+
+```
+curl 'http://localhost:8080/api/recommendations?limit=1' -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+{
+  "items": [
+    {
+      "issue": {
+        "id": "6734a1c2e4b0a1b2c3d4e5f7",
+        "title": "Connection pool leaks memory when a request times out",
+        "description": "The connection pool leaks memory when a request times out...",
+        "category": "bug",
+        "language": "Go",
+        "difficulty": "medium",
+        "labels": ["help wanted"],
+        "project": { "name": "northwind/httpclient", "url": "https://github.com/northwind/httpclient", "stars": 4200 },
+        "status": "open",
+        "createdAt": "2026-10-20T08:30:00Z"
+      },
+      "score": 2.41,
+      "basedOn": "Scheduler deadlocks under heavy load"
+    }
+  ],
+  "strategy": "precomputed",
+  "cached": false
+}
+```
+
+`basedOn` is the title of the issue from the user's history that added most to the score. It is empty for a user with no history.
+
+### POST /api/admin/recompute
+
+Admin only. Runs the similarity job now.
+
+```
+curl -X POST http://localhost:8080/api/admin/recompute -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+```json
+{ "issues": 1000, "durationMs": 165 }
+```

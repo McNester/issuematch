@@ -41,6 +41,18 @@ Settings are in `backend/.env`. Set `GITHUB_TOKEN` there to import more issues f
 
 `make test` runs the Go tests.
 
+## Benchmark
+
+The benchmark needs a running API and a seeded database. It sends 200 requests to each scenario, prints a table and appends the rows to `backend/bench/results.csv`.
+
+```
+make seed SIZE=small
+make bench
+make bench FLAGS=-drop-indexes
+```
+
+`-drop-indexes` drops all indexes before the run and recreates them after. Repeat with `SIZE=medium` and `SIZE=large`. With Docker, use `make docker-seed SIZE=...` instead of `make seed`.
+
 ## Accounts
 
 | Role | Email | Password |
