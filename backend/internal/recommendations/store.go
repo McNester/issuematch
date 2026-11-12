@@ -2,6 +2,7 @@ package recommendations
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"time"
 
@@ -89,6 +90,10 @@ func (s store) userLanguages(ctx context.Context, userID bson.ObjectID) ([]strin
 		Languages []string `bson:"languages"`
 	}
 	err := s.users.FindOne(ctx, bson.M{"_id": userID}).Decode(&user)
+	// A token can outlive its user, for example after a reseed.
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		err = nil
+	}
 	if user.Languages == nil {
 		user.Languages = []string{}
 	}

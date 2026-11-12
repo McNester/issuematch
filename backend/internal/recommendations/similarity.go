@@ -60,27 +60,26 @@ type Neighbor struct {
 type matrix struct {
 	byUser  map[bson.ObjectID]ratings
 	byIssue map[bson.ObjectID]map[bson.ObjectID]float64
+	norms   map[bson.ObjectID]float64
 }
 
 func newMatrix(byUser map[bson.ObjectID]ratings) matrix {
 	byIssue := map[bson.ObjectID]map[bson.ObjectID]float64{}
+	sumsOfSquares := map[bson.ObjectID]float64{}
 	for user, rated := range byUser {
 		for issue, rating := range rated {
 			if byIssue[issue] == nil {
 				byIssue[issue] = map[bson.ObjectID]float64{}
 			}
 			byIssue[issue][user] = rating
+			sumsOfSquares[issue] += rating * rating
 		}
 	}
-	return matrix{byUser, byIssue}
-}
-
-func (m matrix) norm(issue bson.ObjectID) float64 {
-	sumOfSquares := 0.0
-	for _, rating := range m.byIssue[issue] {
-		sumOfSquares += rating * rating
+	norms := map[bson.ObjectID]float64{}
+	for issue, sum := range sumsOfSquares {
+		norms[issue] = math.Sqrt(sum)
 	}
-	return math.Sqrt(sumOfSquares)
+	return matrix{byUser, byIssue, norms}
 }
 
 // neighbors returns the issues most similar to the given one by cosine similarity.
@@ -94,10 +93,9 @@ func (m matrix) neighbors(issue bson.ObjectID) []Neighbor {
 		}
 	}
 
-	norm := m.norm(issue)
 	found := make([]Neighbor, 0, len(dotProducts))
 	for other, dotProduct := range dotProducts {
-		found = append(found, Neighbor{other, dotProduct / (norm * m.norm(other))})
+		found = append(found, Neighbor{other, dotProduct / (m.norms[issue] * m.norms[other])})
 	}
 	slices.SortFunc(found, func(a, b Neighbor) int {
 		return cmp.Or(cmp.Compare(b.Score, a.Score), compareIDs(a.IssueID, b.IssueID))
