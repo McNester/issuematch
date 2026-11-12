@@ -10,7 +10,7 @@ run: backend/.env
 	cd backend && ../bin/server
 
 seed: backend/.env
-	cd backend && go run ./cmd/seed -size $(SIZE)
+	cd backend && go run ./cmd/seed -size $(SIZE) $(FLAGS)
 
 frontend:
 	cd frontend && npm install && npm run dev
@@ -25,7 +25,7 @@ docker-up: backend/.env
 	docker compose up -d --build
 
 docker-seed:
-	docker compose exec backend seed -size $(SIZE)
+	docker compose exec backend seed -size $(SIZE) $(FLAGS)
 
 docker-down:
 	docker compose down

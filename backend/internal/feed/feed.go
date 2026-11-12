@@ -33,8 +33,11 @@ type githubIssue struct {
 	} `json:"labels"`
 }
 
-// Run imports the open issues of every repository and returns how many it stored.
-func Run(ctx context.Context, store issues.Store, repos []string, token string) (int, error) {
+const pageSize = 100
+
+// Run imports the open issues of every repository, up to the given number of
+// pages of 100 each, and returns how many it stored.
+func Run(ctx context.Context, store issues.Store, repos []string, token string, pages int) (int, error) {
 	imported := 0
 	for _, repoName := range repos {
 		repoName = strings.TrimSpace(repoName)
@@ -42,8 +45,14 @@ func Run(ctx context.Context, store issues.Store, repos []string, token string) 
 		var repo githubRepo
 		var open []githubIssue
 		err := fetch(ctx, token, "/repos/"+repoName, &repo)
-		if err == nil {
-			err = fetch(ctx, token, "/repos/"+repoName+"/issues?state=open&per_page=100", &open)
+		for page := 1; err == nil && page <= pages; page++ {
+			var onPage []githubIssue
+			path := fmt.Sprintf("/repos/%s/issues?state=open&per_page=%d&page=%d", repoName, pageSize, page)
+			err = fetch(ctx, token, path, &onPage)
+			open = append(open, onPage...)
+			if len(onPage) < pageSize {
+				break
+			}
 		}
 		if errors.Is(err, errRateLimited) {
 			log.Println("feed: GitHub rate limit hit, stopping")

@@ -37,6 +37,7 @@ const insertBatch = 10_000
 
 func main() {
 	sizeName := flag.String("size", "small", "small, medium or large")
+	realOnly := flag.Bool("real", false, "keep only issues imported from GitHub, generate none")
 	flag.Parse()
 	size, known := sizes[*sizeName]
 	if !known {
@@ -62,11 +63,20 @@ func main() {
 	// A fixed seed makes two runs produce the same data.
 	random := rand.New(rand.NewPCG(1, 2))
 
-	imported, err := feed.Run(ctx, issueStore, config.FeedRepos, config.GitHubToken)
-	if err != nil {
-		log.Println("feed failed, generating issues instead:", err)
+	// One page holds 100 entries and many of them are pull requests, so a
+	// seed with only real issues reads more pages.
+	feedPages := 1
+	if *realOnly {
+		feedPages = 5
 	}
-	if missing := size.issues - imported; missing > 0 {
+	imported, err := feed.Run(ctx, issueStore, config.FeedRepos, config.GitHubToken, feedPages)
+	if err != nil {
+		log.Println("feed failed:", err)
+	}
+	if *realOnly && imported == 0 {
+		log.Fatal("no issues imported from GitHub; set GITHUB_TOKEN in backend/.env and try again")
+	}
+	if missing := size.issues - imported; missing > 0 && !*realOnly {
 		projects := generateProjects(random)
 		generated := make([]issues.Issue, missing)
 		for i := range generated {
