@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../../shared/api.js'
-import { setToken } from '../../shared/session.js'
+import { startSession } from '../../shared/session.js'
 
 export default function SignInPage() {
   const [email, setEmail] = useState('')
@@ -12,8 +12,8 @@ export default function SignInPage() {
   async function signIn(event) {
     event.preventDefault()
     try {
-      const { token } = await api('/auth/login', { method: 'POST', body: { email, password } })
-      setToken(token)
+      const session = await api('/auth/login', { method: 'POST', body: { email, password } })
+      startSession(session)
       navigate('/')
     } catch (failure) {
       setError(failure.message)

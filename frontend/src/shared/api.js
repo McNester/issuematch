@@ -1,4 +1,4 @@
-import { clearToken, getToken } from './session.js'
+import { endSession, getToken } from './session.js'
 
 export async function api(path, { method = 'GET', body } = {}) {
   const token = getToken()
@@ -13,7 +13,7 @@ export async function api(path, { method = 'GET', body } = {}) {
 
   // The token has expired or is no longer valid.
   if (response.status === 401 && token) {
-    clearToken()
+    endSession()
     window.location.assign('/signin')
   }
   if (response.status === 204) {

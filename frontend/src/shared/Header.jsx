@@ -1,19 +1,21 @@
 import { Link, useLocation } from 'react-router-dom'
-import { clearToken } from './session.js'
+import { endSession, isAdmin } from './session.js'
 
 export default function Header() {
   const { pathname } = useLocation()
   const onIssues = pathname === '/' || pathname.startsWith('/issues')
+  const linkClass = active => (active ? 'header-link active' : 'header-link')
 
   return (
     <header className="header">
       <Link to="/" className="header-brand">IssueMatch</Link>
       <nav className="header-nav">
-        <Link to="/" className={onIssues ? 'header-link active' : 'header-link'}>Issues</Link>
-        <Link to="/recommendations" className={pathname === '/recommendations' ? 'header-link active' : 'header-link'}>For you</Link>
-        <Link to="/profile" className={pathname === '/profile' ? 'header-link active' : 'header-link'}>Profile</Link>
+        <Link to="/" className={linkClass(onIssues)}>Issues</Link>
+        <Link to="/recommendations" className={linkClass(pathname === '/recommendations')}>For you</Link>
+        <Link to="/profile" className={linkClass(pathname === '/profile')}>Profile</Link>
       </nav>
-      <Link to="/signin" className="header-signout" onClick={clearToken}>Sign out</Link>
+      {isAdmin() && <span className="chip">Admin</span>}
+      <Link to="/signin" className="header-signout" onClick={endSession}>Sign out</Link>
     </header>
   )
 }

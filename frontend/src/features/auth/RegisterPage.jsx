@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../../shared/api.js'
 import { splitByComma } from '../../shared/format.js'
-import { setToken } from '../../shared/session.js'
+import { startSession } from '../../shared/session.js'
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('')
@@ -15,11 +15,11 @@ export default function RegisterPage() {
   async function register(event) {
     event.preventDefault()
     try {
-      const { token } = await api('/auth/register', {
+      const session = await api('/auth/register', {
         method: 'POST',
         body: { username, email, password, languages: splitByComma(languages) },
       })
-      setToken(token)
+      startSession(session)
       navigate('/')
     } catch (failure) {
       setError(failure.message)
