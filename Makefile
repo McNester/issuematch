@@ -18,6 +18,9 @@ frontend:
 test:
 	cd backend && go test ./...
 
+bench: backend/.env
+	cd backend && go run ./cmd/bench $(FLAGS)
+
 docker-up: backend/.env
 	docker compose up -d --build
 
