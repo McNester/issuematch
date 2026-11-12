@@ -3,6 +3,7 @@ package recommendations
 import (
 	"math"
 	"testing"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
@@ -31,6 +32,24 @@ func TestRateKeepsTheHighestWeight(t *testing.T) {
 	})
 	if rated[poolBug] != 5 || rated[cacheBug] != 1 {
 		t.Errorf("got %v", rated)
+	}
+}
+
+func TestFadeHalvesARatingEveryWeek(t *testing.T) {
+	now := time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)
+	history := []interaction{
+		{IssueID: poolBug, Type: "solved", CreatedAt: now.Add(-time.Hour)},
+		{IssueID: cacheBug, Type: "bookmark", CreatedAt: now.AddDate(0, 0, -7)},
+		{IssueID: poolBug, Type: "view", CreatedAt: now.AddDate(0, 0, -30)},
+	}
+
+	faded := fade(rate(history), history, now)
+
+	if faded[poolBug] != 5 {
+		t.Errorf("an issue touched today has rating %f, want the full 5", faded[poolBug])
+	}
+	if !almostEqual(faded[cacheBug], 1.5) {
+		t.Errorf("a bookmark from a week ago has rating %f, want 1.5", faded[cacheBug])
 	}
 }
 

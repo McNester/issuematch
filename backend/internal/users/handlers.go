@@ -6,13 +6,15 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"issuematch/internal/platform"
 )
 
-func Routes(r chi.Router, db *mongo.Database, jwtSecret string) {
-	h := handlers{NewStore(db)}
+// onUpdated is called with the user's id after their profile changes.
+func Routes(r chi.Router, db *mongo.Database, jwtSecret string, onUpdated func(userID bson.ObjectID)) {
+	h := handlers{NewStore(db), onUpdated}
 	r.Group(func(r chi.Router) {
 		r.Use(platform.RequireAuth(jwtSecret))
 		r.Get("/users/me", h.me)
@@ -21,7 +23,8 @@ func Routes(r chi.Router, db *mongo.Database, jwtSecret string) {
 }
 
 type handlers struct {
-	store Store
+	store     Store
+	onUpdated func(userID bson.ObjectID)
 }
 
 func (h handlers) me(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +68,7 @@ func (h handlers) updateMe(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		platform.WriteServerError(w, err)
 	default:
+		h.onUpdated(user.ID)
 		platform.WriteJSON(w, http.StatusOK, user)
 	}
 }

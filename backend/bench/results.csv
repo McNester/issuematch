@@ -1,0 +1,7 @@
+scenario,dataset size,indexes,requests,average ms,p95 ms
+Search by text,1000 issues 203 users 19704 interactions,yes,200,0.87,1.46
+Search by filters,1000 issues 203 users 19704 interactions,yes,200,0.84,1.71
+History,1000 issues 203 users 19704 interactions,yes,200,1.42,2.43
+"Recommendations, baseline",1000 issues 203 users 19704 interactions,yes,200,56.50,63.20
+"Recommendations, precomputed",1000 issues 203 users 19704 interactions,yes,200,1.73,2.71
+"Recommendations, precomputed and cached",1000 issues 203 users 19704 interactions,yes,200,0.34,0.44

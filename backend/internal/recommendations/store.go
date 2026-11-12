@@ -105,9 +105,9 @@ type popularIssue struct {
 	Score float64      `bson:"score"`
 }
 
-// popular returns the open issues with the highest sum of interaction weights,
-// those written in one of the given languages first.
-func (s store) popular(ctx context.Context, languages []string, limit int) ([]popularIssue, error) {
+// popular returns the open issues with the highest sum of interaction
+// weights since the given time, those written in one of the given languages first.
+func (s store) popular(ctx context.Context, since time.Time, languages []string, limit int) ([]popularIssue, error) {
 	var weightOfType bson.A
 	for interactionType, weight := range weights {
 		weightOfType = append(weightOfType, bson.M{
@@ -116,6 +116,7 @@ func (s store) popular(ctx context.Context, languages []string, limit int) ([]po
 		})
 	}
 	cursor, err := s.interactions.Aggregate(ctx, mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"createdAt": bson.M{"$gte": since}}}},
 		{{Key: "$group", Value: bson.M{
 			"_id":   "$issueId",
 			"score": bson.M{"$sum": bson.M{"$switch": bson.M{"branches": weightOfType, "default": 0}}},

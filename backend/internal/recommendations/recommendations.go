@@ -2,6 +2,7 @@ package recommendations
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -28,6 +29,9 @@ type Service struct {
 	issues      issues.Store
 	cache       cache
 	recomputing sync.Mutex
+
+	trendingMutex sync.Mutex
+	trendingKept  map[string]keptTrending
 }
 
 func New(db *mongo.Database) *Service {
@@ -39,6 +43,8 @@ func New(db *mongo.Database) *Service {
 		},
 		issues: issues.NewStore(db),
 		cache:  cache{entries: map[bson.ObjectID]cacheEntry{}},
+
+		trendingKept: map[string]keptTrending{},
 	}
 }
 
@@ -100,7 +106,7 @@ func (s *Service) recommend(ctx context.Context, userID bson.ObjectID, strategy 
 	if len(history) == 0 {
 		return s.popular(ctx, userID, limit)
 	}
-	rated := rate(history)
+	rated := fade(rate(history), history, time.Now())
 	ratedIssues := make([]bson.ObjectID, 0, len(rated))
 	for issue := range rated {
 		ratedIssues = append(ratedIssues, issue)
@@ -161,7 +167,39 @@ func (s *Service) popular(ctx context.Context, userID bson.ObjectID, limit int) 
 	if err != nil {
 		return nil, err
 	}
-	found, err := s.store.popular(ctx, languages, limit)
+	return s.popularItems(ctx, time.Time{}, languages, limit)
+}
+
+const (
+	trendingWindow   = 7 * 24 * time.Hour
+	trendingLifetime = 5 * time.Minute
+)
+
+// trending returns the most popular open issues of the last week, those in
+// the given languages first. Everyone sees the same list, so it is computed
+// once per language set and kept for a few minutes.
+func (s *Service) trending(ctx context.Context, languages []string, limit int) ([]Item, error) {
+	key := fmt.Sprint(languages, limit)
+	s.trendingMutex.Lock()
+	defer s.trendingMutex.Unlock()
+	if kept, found := s.trendingKept[key]; found && time.Now().Before(kept.expires) {
+		return kept.items, nil
+	}
+	items, err := s.popularItems(ctx, time.Now().Add(-trendingWindow), languages, limit)
+	if err != nil {
+		return nil, err
+	}
+	s.trendingKept[key] = keptTrending{items, time.Now().Add(trendingLifetime)}
+	return items, nil
+}
+
+type keptTrending struct {
+	items   []Item
+	expires time.Time
+}
+
+func (s *Service) popularItems(ctx context.Context, since time.Time, languages []string, limit int) ([]Item, error) {
+	found, err := s.store.popular(ctx, since, languages, limit)
 	if err != nil {
 		return nil, err
 	}

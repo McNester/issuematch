@@ -14,6 +14,7 @@ const (
 	neighborsPerIssue = 20
 	// Without this limit one very active user creates millions of issue pairs.
 	recentIssuesPerUser = 50
+	ratingHalfLifeDays  = 7
 )
 
 var weights = map[string]float64{"view": 1, "bookmark": 3, "working": 4, "solved": 5}
@@ -35,6 +36,22 @@ func rate(history []interaction) ratings {
 		rated[item.IssueID] = max(rated[item.IssueID], weights[item.Type])
 	}
 	return rated
+}
+
+// fade lowers the rating of issues the user has not touched for a while, so
+// that what they did today shapes the recommendations more than what they did
+// last month. Age counts in whole days to keep the result stable within a day.
+// The history must be sorted newest first.
+func fade(rated ratings, history []interaction, now time.Time) ratings {
+	faded := ratings{}
+	for _, item := range history {
+		if _, done := faded[item.IssueID]; done {
+			continue
+		}
+		daysAgo := math.Floor(now.Sub(item.CreatedAt).Hours() / 24)
+		faded[item.IssueID] = rated[item.IssueID] * math.Pow(0.5, max(daysAgo, 0)/ratingHalfLifeDays)
+	}
+	return faded
 }
 
 // recent keeps only the interactions with the user's most recently touched issues.
