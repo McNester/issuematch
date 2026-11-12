@@ -82,6 +82,54 @@ a:hover {
   font-weight: 600;
 }
 
+.page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #e2e5ea;
+  border-radius: 8px;
+  color: #14171c;
+  text-decoration: none;
+}
+
+.card:hover {
+  border-color: #1f4fd8;
+  color: #14171c;
+}
+
+.card-title {
+  flex-grow: 1;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .muted {
   margin: 0;
   font-size: 14px;
@@ -111,6 +159,24 @@ a:hover {
   box-sizing: border-box;
   background: #ffffff;
   color: #14171c;
+}
+
+/* The native arrow sits at a different place in every browser, so the
+   select draws its own. */
+.select {
+  appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235b6472' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+.textarea {
+  height: auto;
+  padding: 10px 12px;
+  line-height: 1.5;
+  resize: vertical;
 }
 
 .field {
@@ -182,9 +248,37 @@ a:hover {
   font-weight: 500;
 }
 
-.button-secondary[aria-pressed="true"] {
-  background: #eef1f5;
+.button-secondary:hover:not(:disabled) {
   border-color: #8a93a1;
+}
+
+.button-secondary[aria-pressed="true"] {
+  background: #eef3ff;
+  border-color: #1f4fd8;
+  color: #1f4fd8;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.button-link:hover {
+  color: #14171c;
+}
+
+.button-danger {
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: #b42318;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .button-icon {
@@ -201,7 +295,13 @@ a:hover {
   cursor: pointer;
 }
 
+.button-icon:hover {
+  border-color: #8a93a1;
+}
+
 .button-icon[aria-pressed="true"] {
+  background: #eef3ff;
+  border-color: #1f4fd8;
   color: #1f4fd8;
 }
 
@@ -277,7 +377,18 @@ a:hover {
 }
 
 .filters-search {
-  flex: 1 1 280px;
+  flex: 2 1 360px;
+  display: flex;
+  gap: 12px;
+}
+
+.filters-search .input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.filters .select {
+  flex: 1 1 150px;
 }
 
 .issue-row {
@@ -384,25 +495,90 @@ a:hover {
   line-height: 1.25;
 }
 
-.issue-description {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.markdown {
   font-size: 16px;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 
-.issue-description p {
-  margin: 0;
-  white-space: pre-wrap;
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown p, .markdown ul, .markdown ol, .markdown pre, .markdown table, .markdown blockquote {
+  margin: 0 0 12px;
+}
+
+.markdown h1, .markdown h2, .markdown h3, .markdown h4 {
+  margin: 20px 0 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.markdown ul, .markdown ol {
+  padding-left: 24px;
+}
+
+.markdown code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #eef1f5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+
+.markdown pre {
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #f6f7f9;
+  border: 1px solid #e2e5ea;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.markdown pre code {
+  padding: 0;
+  background: none;
+  overflow-wrap: normal;
+}
+
+.markdown blockquote {
+  padding-left: 12px;
+  border-left: 3px solid #e2e5ea;
+  color: #5b6472;
+}
+
+.markdown img {
+  max-width: 100%;
+}
+
+.markdown table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.markdown th, .markdown td {
+  padding: 6px 10px;
+  border: 1px solid #e2e5ea;
 }
 
 .issue-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  padding-top: 4px;
+}
+
+.details-admin {
+  display: flex;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e5ea;
 }
 
 .issue-view-note {
@@ -490,4 +666,63 @@ a:hover {
 .history-date {
   font-size: 13px;
   color: #5b6472;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #c5cad3;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #333c48;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.filter-chip[aria-pressed="true"] {
+  background: #eef3ff;
+  border-color: #1f4fd8;
+  color: #1f4fd8;
+}
+
+.filter-chip-count {
+  color: #5b6472;
+  font-weight: 400;
+}
+
+/* Admin issue form */
+
+.page-form {
+  max-width: 760px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.form-row .field {
+  flex: 1 1 180px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
 }

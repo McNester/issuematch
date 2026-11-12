@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../shared/api.js'
+import { isAdmin } from '../../shared/session.js'
 import IssueRow from './IssueRow.jsx'
+import Trending from './Trending.jsx'
+import { useInteractions } from './useInteractions.js'
 
 const pageSize = 20
 
@@ -8,8 +12,8 @@ export default function CatalogPage() {
   const [text, setText] = useState('')
   const [search, setSearch] = useState({ q: '', category: '', language: '', difficulty: '', page: 1 })
   const [result, setResult] = useState({ items: [], total: 0 })
-  const [bookmarked, setBookmarked] = useState([])
   const [error, setError] = useState('')
+  const interactions = useInteractions()
 
   useEffect(() => {
     const params = new URLSearchParams({ page: search.page, limit: pageSize })
@@ -23,12 +27,6 @@ export default function CatalogPage() {
       .catch(failure => setError(failure.message))
   }, [search])
 
-  useEffect(() => {
-    api('/users/me/interactions')
-      .then(history => setBookmarked(history.filter(item => item.type === 'bookmark').map(item => item.issueId)))
-      .catch(failure => setError(failure.message))
-  }, [])
-
   function filterBy(name) {
     return event => setSearch({ ...search, [name]: event.target.value, page: 1 })
   }
@@ -38,24 +36,23 @@ export default function CatalogPage() {
     setSearch({ ...search, q: text, page: 1 })
   }
 
-  async function bookmark(issueId) {
-    try {
-      await api('/interactions', { method: 'POST', body: { issueId, type: 'bookmark' } })
-      setBookmarked([...bookmarked, issueId])
-    } catch (failure) {
-      setError(failure.message)
-    }
-  }
+  const browsing = !search.q && !search.category && !search.language && !search.difficulty && search.page === 1
 
   const first = (search.page - 1) * pageSize + 1
   const last = first + result.items.length - 1
 
   return (
     <main className="page">
-      <h1 className="page-title">Issues</h1>
+      <div className="page-heading">
+        <h1 className="page-title">Issues</h1>
+        {isAdmin() && <Link to="/issues/new" className="button-secondary button-link">New issue</Link>}
+      </div>
       <form className="filters" onSubmit={submitSearch}>
-        <input type="search" className="input filters-search" aria-label="Search issues by name"
-          placeholder="Search by name or description" value={text} onChange={event => setText(event.target.value)} />
+        <div className="filters-search">
+          <input type="search" className="input" aria-label="Search issues by name"
+            placeholder="Search by name or description" value={text} onChange={event => setText(event.target.value)} />
+          <button type="submit" className="button-primary">Search</button>
+        </div>
         <select className="select" aria-label="Category" value={search.category} onChange={filterBy('category')}>
           <option value="">All categories</option>
           <option value="bug">Bug</option>
@@ -77,9 +74,9 @@ export default function CatalogPage() {
           <option value="medium">Medium</option>
           <option value="hard">Hard</option>
         </select>
-        <button type="submit" className="button-primary">Search</button>
       </form>
-      {error && <p className="error">{error}</p>}
+      {(error || interactions.error) && <p className="error">{error || interactions.error}</p>}
+      {browsing && <Trending />}
       <p className="muted">
         {result.total === 0
           ? 'No issues found'
@@ -87,7 +84,8 @@ export default function CatalogPage() {
       </p>
       <div className="list">
         {result.items.map(issue => (
-          <IssueRow key={issue.id} issue={issue} bookmarked={bookmarked.includes(issue.id)} onBookmark={bookmark} />
+          <IssueRow key={issue.id} issue={issue} bookmarked={interactions.has(issue.id, 'bookmark')}
+            onBookmark={issueId => interactions.toggle(issueId, 'bookmark')} />
         ))}
       </div>
       <div className="pagination">

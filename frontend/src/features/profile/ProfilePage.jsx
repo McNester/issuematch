@@ -4,12 +4,14 @@ import { api } from '../../shared/api.js'
 import { formatDate, splitByComma } from '../../shared/format.js'
 
 const historyLabels = { view: 'Viewed', bookmark: 'Bookmarked', working: 'Working on it', solved: 'Solved' }
+const historyFilters = ['all', 'bookmark', 'working', 'solved', 'view']
 
 export default function ProfilePage() {
   const [form, setForm] = useState({ username: '', email: '', bio: '', languages: '', interests: '' })
   const [history, setHistory] = useState([])
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
     api('/users/me')
@@ -50,6 +52,8 @@ export default function ProfilePage() {
     }
   }
 
+  const shown = filter === 'all' ? history : history.filter(item => item.type === filter)
+
   return (
     <main className="page page-profile">
       <form className="profile-form" onSubmit={save}>
@@ -65,8 +69,20 @@ export default function ProfilePage() {
       </form>
       <section className="profile-history">
         <h2 className="page-title">History</h2>
+        <div className="filter-chips">
+          {historyFilters.map(type => (
+            <button key={type} type="button" className="filter-chip" aria-pressed={filter === type}
+              onClick={() => setFilter(type)}>
+              {type === 'all' ? 'All' : historyLabels[type]}
+              <span className="filter-chip-count">
+                {type === 'all' ? history.length : history.filter(item => item.type === type).length}
+              </span>
+            </button>
+          ))}
+        </div>
+        {shown.length === 0 && <p className="muted">Nothing here yet.</p>}
         <div className="list">
-          {history.map(item => (
+          {shown.map(item => (
             <div key={item.id} className="history-row">
               <span className="history-type">{historyLabels[item.type]}</span>
               <Link to={'/issues/' + item.issueId} className="history-title">{item.title}</Link>
