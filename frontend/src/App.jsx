@@ -6,6 +6,7 @@ import RegisterPage from './features/auth/RegisterPage.jsx'
 import CatalogPage from './features/issues/CatalogPage.jsx'
 import IssuePage from './features/issues/IssuePage.jsx'
 import ProfilePage from './features/profile/ProfilePage.jsx'
+import RecommendationsPage from './features/recommendations/RecommendationsPage.jsx'
 
 function SignedIn() {
   if (!getToken()) {
@@ -27,6 +28,7 @@ export default function App() {
       <Route element={<SignedIn />}>
         <Route path="/" element={<CatalogPage />} />
         <Route path="/issues/:id" element={<IssuePage />} />
+        <Route path="/recommendations" element={<RecommendationsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
     </Routes>
