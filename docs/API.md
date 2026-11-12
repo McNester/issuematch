@@ -220,6 +220,14 @@ curl -X POST http://localhost:8080/api/interactions \
 }
 ```
 
+### DELETE /api/interactions/:issueId/:type
+
+Needs a token. Removes one interaction of the current user. Returns 204 with no body.
+
+```
+curl -X DELETE http://localhost:8080/api/interactions/6734a1c2e4b0a1b2c3d4e5f7/bookmark -H "Authorization: Bearer $TOKEN"
+```
+
 ### GET /api/users/me/interactions
 
 Needs a token. Returns the current user's history, newest first.
@@ -282,6 +290,23 @@ curl 'http://localhost:8080/api/recommendations?limit=1' -H "Authorization: Bear
 ```
 
 `basedOn` is the title of the issue from the user's history that added most to the score. It is empty for a user with no history.
+
+A rating loses half of its weight for every 7 days since the user last touched the issue. Recent activity shapes the result more.
+
+### GET /api/recommendations/trending
+
+Needs a token. Returns the most active open issues of the last 7 days. Issues in the given languages come first.
+
+| Parameter | Meaning |
+| --- | --- |
+| `languages` | Comma-separated, for example `Go,Java` |
+| `limit` | Default 5, at most 50 |
+
+```
+curl 'http://localhost:8080/api/recommendations/trending?languages=Go&limit=1' -H "Authorization: Bearer $TOKEN"
+```
+
+The response is `{ "items": [ ... ] }` with the same items as above and an empty `basedOn`.
 
 ### POST /api/admin/recompute
 

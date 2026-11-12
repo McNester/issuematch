@@ -37,7 +37,18 @@ npm install
 npm run dev
 ```
 
-Settings are in `backend/.env`. Set `GITHUB_TOKEN` there to import more issues from GitHub.
+Settings are in `backend/.env`. Set `GITHUB_TOKEN` there to import issues from GitHub.
+
+## Real issues only
+
+By default the seed fills the gap between imported issues and the chosen size with generated ones. The `-real` flag turns that off. It needs `GITHUB_TOKEN` and reads up to 500 entries per repository in `FEED_REPOS`.
+
+```
+make seed FLAGS=-real
+make docker-seed FLAGS=-real
+```
+
+With Docker, run `make docker-up` after changing `backend/.env`.
 
 `make test` runs the Go tests.
 
