@@ -16,6 +16,7 @@ import (
 	"issuematch/internal/interactions"
 	"issuematch/internal/issues"
 	"issuematch/internal/platform"
+	"issuematch/internal/recommendations"
 	"issuematch/internal/users"
 )
 
@@ -112,9 +113,13 @@ func main() {
 	pending = append(pending, generator.forUser(demo.ID, demo.Languages, []string{"bug", "feature"}, 20)...)
 	flush()
 
+	withNeighbors, err := recommendations.New(db).Recompute(ctx)
+	must(err)
+
 	fmt.Printf("issues: %d (%d imported from GitHub)\n", len(allIssues), imported)
 	fmt.Printf("users: %d\n", len(people))
 	fmt.Printf("interactions: %d\n", total)
+	fmt.Printf("similarities: %d\n", withNeighbors)
 }
 
 func must(err error) {

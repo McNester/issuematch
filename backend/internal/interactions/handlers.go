@@ -12,8 +12,9 @@ import (
 	"issuematch/internal/platform"
 )
 
-func Routes(r chi.Router, db *mongo.Database, jwtSecret string) {
-	h := handlers{NewStore(db)}
+// onRecorded is called with the user's id after each new interaction.
+func Routes(r chi.Router, db *mongo.Database, jwtSecret string, onRecorded func(userID bson.ObjectID)) {
+	h := handlers{NewStore(db), onRecorded}
 	r.Group(func(r chi.Router) {
 		r.Use(platform.RequireAuth(jwtSecret))
 		r.Post("/interactions", h.record)
@@ -22,7 +23,8 @@ func Routes(r chi.Router, db *mongo.Database, jwtSecret string) {
 }
 
 type handlers struct {
-	store Store
+	store      Store
+	onRecorded func(userID bson.ObjectID)
 }
 
 func (h handlers) record(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +59,7 @@ func (h handlers) record(w http.ResponseWriter, r *http.Request) {
 		platform.WriteServerError(w, err)
 		return
 	}
+	h.onRecorded(recorded.UserID)
 	platform.WriteJSON(w, http.StatusCreated, recorded)
 }
 

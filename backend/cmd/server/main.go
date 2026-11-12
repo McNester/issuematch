@@ -13,6 +13,7 @@ import (
 	"issuematch/internal/interactions"
 	"issuematch/internal/issues"
 	"issuematch/internal/platform"
+	"issuematch/internal/recommendations"
 	"issuematch/internal/users"
 )
 
@@ -38,6 +39,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	recommender := recommendations.New(db)
+	if err := recommender.RecomputeIfEmpty(ctx); err != nil {
+		log.Fatal(err)
+	}
+	go every(config.RecomputeInterval, func() {
+		count, err := recommender.Recompute(ctx)
+		log.Printf("recompute: wrote similarities of %d issues, error: %v", count, err)
+	})
+
 	go every(config.FeedInterval, func() {
 		imported, err := feed.Run(ctx, issues.NewStore(db), config.FeedRepos, config.GitHubToken)
 		log.Printf("feed: imported %d issues, error: %v", imported, err)
@@ -51,7 +61,8 @@ func main() {
 		auth.Routes(r, db, config.JWTSecret)
 		users.Routes(r, db, config.JWTSecret)
 		issues.Routes(r, db, config.JWTSecret)
-		interactions.Routes(r, db, config.JWTSecret)
+		interactions.Routes(r, db, config.JWTSecret, recommender.Forget)
+		recommender.Routes(r, config.JWTSecret)
 	})
 
 	log.Println("listening on port", config.Port)
