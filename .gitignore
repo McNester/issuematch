@@ -4,3 +4,4 @@ issuematch/
 bin/
 node_modules/
 dist/
+.playwright-mcp/
