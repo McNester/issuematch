@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -108,6 +109,11 @@ type popularIssue struct {
 // popular returns the open issues with the highest sum of interaction
 // weights since the given time, those written in one of the given languages first.
 func (s store) popular(ctx context.Context, since time.Time, languages []string, limit int) ([]popularIssue, error) {
+	// People type "javascript" in their profile and issues say "JavaScript".
+	lowercased := bson.A{}
+	for _, language := range languages {
+		lowercased = append(lowercased, strings.ToLower(strings.TrimSpace(language)))
+	}
 	var weightOfType bson.A
 	for interactionType, weight := range weights {
 		weightOfType = append(weightOfType, bson.M{
@@ -124,7 +130,7 @@ func (s store) popular(ctx context.Context, since time.Time, languages []string,
 		{{Key: "$lookup", Value: bson.M{"from": "issues", "localField": "_id", "foreignField": "_id", "as": "issue"}}},
 		{{Key: "$unwind", Value: "$issue"}},
 		{{Key: "$match", Value: bson.M{"issue.status": "open"}}},
-		{{Key: "$set", Value: bson.M{"inUserLanguage": bson.M{"$in": bson.A{"$issue.language", languages}}}}},
+		{{Key: "$set", Value: bson.M{"inUserLanguage": bson.M{"$in": bson.A{bson.M{"$toLower": "$issue.language"}, lowercased}}}}},
 		{{Key: "$sort", Value: bson.D{{Key: "inUserLanguage", Value: -1}, {Key: "score", Value: -1}, {Key: "_id", Value: 1}}}},
 		{{Key: "$limit", Value: limit}},
 	})
