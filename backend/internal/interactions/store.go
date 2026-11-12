@@ -47,6 +47,11 @@ func (s Store) Record(ctx context.Context, userID, issueID bson.ObjectID, intera
 	return recorded, err
 }
 
+func (s Store) Remove(ctx context.Context, userID, issueID bson.ObjectID, interactionType string) error {
+	_, err := s.interactions.DeleteOne(ctx, bson.M{"userId": userID, "issueId": issueID, "type": interactionType})
+	return err
+}
+
 func (s Store) InsertMany(ctx context.Context, interactions []Interaction) error {
 	_, err := s.interactions.InsertMany(ctx, interactions)
 	return err

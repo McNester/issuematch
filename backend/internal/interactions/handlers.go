@@ -12,19 +12,20 @@ import (
 	"issuematch/internal/platform"
 )
 
-// onRecorded is called with the user's id after each new interaction.
-func Routes(r chi.Router, db *mongo.Database, jwtSecret string, onRecorded func(userID bson.ObjectID)) {
-	h := handlers{NewStore(db), onRecorded}
+// onChanged is called with the user's id after their history changes.
+func Routes(r chi.Router, db *mongo.Database, jwtSecret string, onChanged func(userID bson.ObjectID)) {
+	h := handlers{NewStore(db), onChanged}
 	r.Group(func(r chi.Router) {
 		r.Use(platform.RequireAuth(jwtSecret))
 		r.Post("/interactions", h.record)
+		r.Delete("/interactions/{issueId}/{type}", h.remove)
 		r.Get("/users/me/interactions", h.history)
 	})
 }
 
 type handlers struct {
-	store      Store
-	onRecorded func(userID bson.ObjectID)
+	store     Store
+	onChanged func(userID bson.ObjectID)
 }
 
 func (h handlers) record(w http.ResponseWriter, r *http.Request) {
@@ -59,8 +60,23 @@ func (h handlers) record(w http.ResponseWriter, r *http.Request) {
 		platform.WriteServerError(w, err)
 		return
 	}
-	h.onRecorded(recorded.UserID)
+	h.onChanged(recorded.UserID)
 	platform.WriteJSON(w, http.StatusCreated, recorded)
+}
+
+func (h handlers) remove(w http.ResponseWriter, r *http.Request) {
+	issueID, err := bson.ObjectIDFromHex(chi.URLParam(r, "issueId"))
+	if err != nil {
+		platform.WriteError(w, http.StatusBadRequest, "issueId is not valid")
+		return
+	}
+	userID := platform.UserID(r)
+	if err := h.store.Remove(r.Context(), userID, issueID, chi.URLParam(r, "type")); err != nil {
+		platform.WriteServerError(w, err)
+		return
+	}
+	h.onChanged(userID)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h handlers) history(w http.ResponseWriter, r *http.Request) {
