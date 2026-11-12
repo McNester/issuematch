@@ -78,6 +78,7 @@ func main() {
 
 	admin := newUser("admin", "admin@issuematch.local", "admin12345", "admin", nil, nil)
 	demo := newUser("demo", "demo@issuematch.local", "demo12345", "user", []string{"Go", "Java"}, []string{"backend", "databases"})
+	demo.Bio = "Backend developer"
 
 	sharedHash, err := auth.HashPassword("password123")
 	must(err)
