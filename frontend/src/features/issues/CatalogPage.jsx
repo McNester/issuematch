@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../shared/api.js'
 import { isAdmin } from '../../shared/session.js'
+import RecomputeButton from '../recommendations/RecomputeButton.jsx'
 import IssueRow from './IssueRow.jsx'
 import Trending from './Trending.jsx'
 import { useInteractions } from './useInteractions.js'
@@ -45,7 +46,12 @@ export default function CatalogPage() {
     <main className="page">
       <div className="page-heading">
         <h1 className="page-title">Issues</h1>
-        {isAdmin() && <Link to="/issues/new" className="button-secondary button-link">New issue</Link>}
+        {isAdmin() && (
+          <div className="page-heading-actions">
+            <RecomputeButton />
+            <Link to="/issues/new" className="button-secondary button-link">New issue</Link>
+          </div>
+        )}
       </div>
       <form className="filters" onSubmit={submitSearch}>
         <div className="filters-search">

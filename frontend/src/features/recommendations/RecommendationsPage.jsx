@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../shared/api.js'
+import { isAdmin } from '../../shared/session.js'
 import IssueRow from '../issues/IssueRow.jsx'
 import { useInteractions } from '../issues/useInteractions.js'
+import RecomputeButton from './RecomputeButton.jsx'
 
 export default function RecommendationsPage() {
   const [personal, setPersonal] = useState([])
@@ -44,7 +46,10 @@ export default function RecommendationsPage() {
 
   return (
     <main className="page">
-      <h1 className="page-title">For you</h1>
+      <div className="page-heading">
+        <h1 className="page-title">For you</h1>
+        {isAdmin() && <div className="page-heading-actions"><RecomputeButton /></div>}
+      </div>
       {(error || interactions.error) && <p className="error">{error || interactions.error}</p>}
       <section className="section">
         <h2 className="section-title">{hasHistory ? 'Based on your activity' : 'Popular issues'}</h2>

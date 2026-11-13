@@ -89,6 +89,14 @@ a:hover {
   gap: 12px;
 }
 
+.page-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .section {
   display: flex;
   flex-direction: column;
