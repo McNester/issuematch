@@ -87,18 +87,17 @@ func main() {
 	allIssues, err := issueStore.All(ctx)
 	must(err)
 
-	admin := newUser("admin", "admin@issuematch.local", "admin12345", "admin", nil, nil)
-	demo := newUser("demo", "demo@issuematch.local", "demo12345", "user", []string{"Go", "Java"}, []string{"backend", "databases"})
+	admin := newUser("admin", "admin@issuematch.local", hash("admin12345"), "admin", nil, nil)
+	demo := newUser("demo", "demo@issuematch.local", hash("demo12345"), "user", []string{"Go", "Java"}, []string{"backend", "databases"})
 	demo.Bio = "Backend developer"
 
-	sharedHash, err := auth.HashPassword("password123")
-	must(err)
+	// Hashing is slow on purpose, so the synthetic users share one hash.
+	sharedHash := hash("password123")
 	people := []users.User{admin, demo}
 	for i := range size.users {
 		name := fmt.Sprintf("user%04d", i+1)
-		person := newUser(name, name+"@example.com", "", "user", pickSome(random, languages), pickSome(random, issues.Categories))
-		person.PasswordHash = sharedHash
-		people = append(people, person)
+		people = append(people, newUser(name, name+"@example.com", sharedHash, "user",
+			pickSome(random, languages), pickSome(random, issues.Categories)))
 	}
 	must(userStore.InsertMany(ctx, people))
 
@@ -138,14 +137,18 @@ func must(err error) {
 	}
 }
 
-func newUser(username, email, password, role string, languages, interests []string) users.User {
-	hash, err := auth.HashPassword(password)
+func hash(password string) string {
+	hashed, err := auth.HashPassword(password)
 	must(err)
+	return hashed
+}
+
+func newUser(username, email, passwordHash, role string, languages, interests []string) users.User {
 	return users.User{
 		ID:           bson.NewObjectID(),
 		Username:     username,
 		Email:        email,
-		PasswordHash: hash,
+		PasswordHash: passwordHash,
 		Role:         role,
 		Languages:    slices.Concat([]string{}, languages),
 		Interests:    slices.Concat([]string{}, interests),
