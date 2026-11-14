@@ -122,6 +122,11 @@ func (s *Service) recommend(ctx context.Context, userID bson.ObjectID, strategy 
 		return nil, err
 	}
 	ranked := score(rated, neighborsOf, limit)
+	// Issues that nobody else touched yet have no neighbors. A user whose
+	// history holds only such issues gets the popular ones, like a new user.
+	if len(ranked) == 0 {
+		return s.popular(ctx, userID, limit)
+	}
 
 	// One query loads the recommended issues and the issues they are based on.
 	var needed []bson.ObjectID
