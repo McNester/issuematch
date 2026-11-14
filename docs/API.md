@@ -291,6 +291,8 @@ curl 'http://localhost:8080/api/recommendations?limit=1' -H "Authorization: Bear
 
 `basedOn` is the title of the issue from the user's history that added most to the score. It is empty for a user with no history.
 
+An issue that no other user has touched has no neighbors yet. Open issues with the same language and category stand in for them, the same project first.
+
 A rating loses half of its weight for every 7 days since the user last touched the issue. Recent activity shapes the result more.
 
 ### GET /api/recommendations/trending

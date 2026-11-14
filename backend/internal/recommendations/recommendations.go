@@ -121,9 +121,10 @@ func (s *Service) recommend(ctx context.Context, userID bson.ObjectID, strategy 
 	if err != nil {
 		return nil, err
 	}
+	if err := s.addContentNeighbors(ctx, ratedIssues, neighborsOf); err != nil {
+		return nil, err
+	}
 	ranked := score(rated, neighborsOf, limit)
-	// Issues that nobody else touched yet have no neighbors. A user whose
-	// history holds only such issues gets the popular ones, like a new user.
 	if len(ranked) == 0 {
 		return s.popular(ctx, userID, limit)
 	}
@@ -149,6 +150,52 @@ func (s *Service) recommend(ctx context.Context, userID bson.ObjectID, strategy 
 		}
 	}
 	return items, nil
+}
+
+const (
+	// Similarity given to an issue that only looks alike. It is below a
+	// typical similarity learned from behavior, so real neighbors rank higher.
+	sameProjectSimilarity  = 0.25
+	sameLanguageSimilarity = 0.15
+	// How many related issues to read before the same-project ones are put first.
+	relatedCandidates = 100
+)
+
+// addContentNeighbors fills in neighbors for issues that have none. A new
+// issue has no users in common with any other, so collaborative filtering
+// cannot place it. Until it gathers history, issues with the same language
+// and category stand in as its neighbors, the same project first.
+func (s *Service) addContentNeighbors(ctx context.Context, issueIDs []bson.ObjectID, neighborsOf map[bson.ObjectID][]Neighbor) error {
+	var withoutNeighbors []bson.ObjectID
+	for _, id := range issueIDs {
+		if len(neighborsOf[id]) == 0 {
+			withoutNeighbors = append(withoutNeighbors, id)
+		}
+	}
+	if len(withoutNeighbors) == 0 {
+		return nil
+	}
+	loaded, err := s.issues.FindByIDs(ctx, withoutNeighbors)
+	if err != nil {
+		return err
+	}
+	for _, issue := range loaded {
+		related, err := s.issues.Related(ctx, issue, relatedCandidates)
+		if err != nil {
+			return err
+		}
+		var sameProject, sameLanguage []Neighbor
+		for _, other := range related {
+			if other.Project.Name == issue.Project.Name {
+				sameProject = append(sameProject, Neighbor{other.ID, sameProjectSimilarity})
+			} else {
+				sameLanguage = append(sameLanguage, Neighbor{other.ID, sameLanguageSimilarity})
+			}
+		}
+		neighbors := append(sameProject, sameLanguage...)
+		neighborsOf[issue.ID] = neighbors[:min(len(neighbors), neighborsPerIssue)]
+	}
+	return nil
 }
 
 // liveNeighbors is the slow baseline: it rebuilds the similarities from the

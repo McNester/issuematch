@@ -109,6 +109,19 @@ func (s Store) FindByIDs(ctx context.Context, ids []bson.ObjectID) ([]Issue, err
 	return found, err
 }
 
+// Related returns open issues with the same language and category, newest first.
+func (s Store) Related(ctx context.Context, issue Issue, limit int) ([]Issue, error) {
+	cursor, err := s.issues.Find(ctx,
+		bson.M{"category": issue.Category, "language": issue.Language, "status": "open", "_id": bson.M{"$ne": issue.ID}},
+		options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}, {Key: "_id", Value: 1}}).SetLimit(int64(limit)))
+	if err != nil {
+		return nil, err
+	}
+	var related []Issue
+	err = cursor.All(ctx, &related)
+	return related, err
+}
+
 func (s Store) Insert(ctx context.Context, issue *Issue) error {
 	issue.ID = bson.NewObjectID()
 	_, err := s.issues.InsertOne(ctx, issue)
